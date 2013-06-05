@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+sudo service hubo-motion kill
+sudo service hubo-motion ach close
+sudo service hubo-motion stop
+sudo service hubo-motion ach
+/home/jmainpri/workspace/dart-simulation/hubo-ach-tab/build/HuboAchTab
+sleep 6
+#sudo control-daemon
+#sudo trajectory-run
