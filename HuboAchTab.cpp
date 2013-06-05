@@ -38,10 +38,15 @@
 
 /**
  * @author Saul Reynolds-Haertle
+ * 
+ * Modified by :
+ *
+ * @author Jim Mainprice, Worcester Polytechnic Institute, the ARC-lab
  */
 
 #include "HuboAchTab.h"
 #include "HuboController.h"
+#include "HuboManipController.h"
 
 #include <cstdlib>
 #include <inttypes.h>
@@ -109,7 +114,8 @@ namespace HACHT {
         {
             loaded = true;
             std::cout << "trying to load installed world from /usr/share/hubo-ach-tab" << std::endl;
-            frame->DoLoad("/usr/share/hubo-ach-tab/hubo-models/huboplus-empty-world.urdf", false);
+            frame->DoLoad("/home/jmainpri/workspace/dart-simulation/hubo-ach-tab/hubo-models/huboplus-and-wheel-world.urdf", false);
+            //frame->DoLoad("/home/jmainpri/workspace/dart-simulation/hubo-ach-tab/hubo-models/huboplus-empty-world.urdf", false);
             if (mWorld == NULL) {
                 std::cout << "Failed to load installed world. Please load a world with a hubo in it." << std::endl;
             }
@@ -227,15 +233,43 @@ namespace HACHT {
             return false;
         }
 
-        // initialize controller
-        Eigen::VectorXd controller_mask = Eigen::VectorXd::Ones(hubo->getNumDofs());
-        for (int i = 0; i < 5; i++) { controller_mask[i] = 0; }
-        
-        Eigen::VectorXd K_p = 1000.0 * Eigen::VectorXd::Ones(hubo->getNumDofs());
-        Eigen::VectorXd K_i = 100.0 * Eigen::VectorXd::Ones(hubo->getNumDofs());
-        Eigen::VectorXd K_d = 100.0 * Eigen::VectorXd::Ones(hubo->getNumDofs());
-        contr = new HuboController(hubo, K_p, K_i, K_d, controller_mask, mWorld->getTime() - mWorld->getTimeStep() );
+
+        // Set the controller
+        std::vector<int> actuatedDofs;
+        actuatedDofs.resize( hubo->getNumDofs() - 6 );
+        for (unsigned int i = 0; i < actuatedDofs.size(); i++) {
+            actuatedDofs[i] = i + 6;
+        }
+
+        // Define PD controller gains
+        Eigen::VectorXd kI = 100.0 * Eigen::VectorXd::Ones( hubo->getNumDofs() );
+        Eigen::VectorXd kP = 500.0 * Eigen::VectorXd::Ones( hubo->getNumDofs() );
+        Eigen::VectorXd kD = 100.0 * Eigen::VectorXd::Ones( hubo->getNumDofs() );
+
+        // Define gains for the ankle PD
+        std::vector<int> ankleDofs(2);
+        ankleDofs[0] = 27;
+        ankleDofs[1] = 28;
+        // Define gains for the ankle PD
+        const Eigen::VectorXd anklePGains = -1000.0 * Eigen::VectorXd::Ones(2);
+        const Eigen::VectorXd ankleDGains = -200.0 * Eigen::VectorXd::Ones(2);
+
+        // Update robot's pose
+        //hubo->setConfig( actuatedDofs, mTrajs[0].positions[0] );
+
+        // Create controller
+        contr = new HuboManipController( hubo, actuatedDofs, kP, kD, ankleDofs, anklePGains, ankleDGains );
         contr->ref_pos = Eigen::VectorXd::Zero(hubo->getNumDofs());
+
+        // initialize controller
+//        Eigen::VectorXd controller_mask = Eigen::VectorXd::Ones(hubo->getNumDofs());
+//        for (int i = 0; i < 5; i++) { controller_mask[i] = 0; }
+//        
+//        Eigen::VectorXd K_p = 1000.0 * Eigen::VectorXd::Ones(hubo->getNumDofs());
+//        Eigen::VectorXd K_i = 100.0 * Eigen::VectorXd::Ones(hubo->getNumDofs());
+//        Eigen::VectorXd K_d = 100.0 * Eigen::VectorXd::Ones(hubo->getNumDofs());
+//        contr = new HuboController(hubo, K_p, K_i, K_d, controller_mask, mWorld->getTime() - mWorld->getTimeStep() );
+//        contr->ref_pos = Eigen::VectorXd::Zero(hubo->getNumDofs());
 
         return true;
     }
@@ -272,20 +306,26 @@ namespace HACHT {
         r = ach_get(&chan_hubo_ref, &H_ref, sizeof(H_ref), &fs, NULL, ACH_O_LAST);
         switch(r) {
         case ACH_OK:
+        case ACH_MISSED_FRAME:
+            cout << "Get reference ok in read ref !!!" << endl; 
             for (int i = 0; i < HUBO_JOINT_COUNT; i++) {
                 int i_vir = jointmap_phys_to_virtual[i];
                 if (i_vir != -1) {
                     contr->ref_pos[i_vir] = H_ref.ref[i];
                 }
             }
+            cout << "contr->ref_pos : " << endl << contr->ref_pos.transpose() << endl;
             break;
         case ACH_STALE_FRAMES:
+            cout << "Get reference (empty channel) in read ref !!!" << endl; 
             break;
         default:
             std::cout << "Get reference failed: " << ach_result_to_string(r) << std::endl;
             break;
         }
     }
+
+    int write_id = 0;
 
     // write new state into ach channels
     void HuboAchTab::WriteState() {
@@ -309,8 +349,10 @@ namespace HACHT {
         // fill out rest of state struct
         H_state.time = mWorld->getTime();
         H_state.refWait = 0.0;
-        // send data to channel
+        // send data to  channel
         ach_put( &chan_hubo_state, &H_state, sizeof(H_state));
+
+        cout << "publish state " << write_id++ << " at time : " << mWorld->getTime() << " sec" <<  endl;
     }
 
     //###########################################################

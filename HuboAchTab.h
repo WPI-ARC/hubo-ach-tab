@@ -71,6 +71,7 @@ namespace HACHT {
     // forward definition of HuboController becuase HC needs variables
     // from this file
     class HuboController;
+    class HuboManipController;
     
     class HuboAchTab : public GRIPTab
     {
@@ -80,7 +81,9 @@ namespace HACHT {
         // pointer to the hubo we're controlling
         dynamics::SkeletonDynamics* hubo;
         // the pid controller we'll use control things
-        HuboController* contr;
+
+        //HuboController* contr;
+        HuboManipController* contr;
 
         // pointer to particular links in hubo that we'll be doing
         // special things with

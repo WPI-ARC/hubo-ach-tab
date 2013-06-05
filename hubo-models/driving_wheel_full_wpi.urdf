@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<robot name="valve">
+
+  <link name="world"/>
+  <joint name="root" type="fixed">
+    <parent link="world"/>
+    <child link="rod"/>
+  </joint>
+  
+  <link name="rod">
+    <visual>
+      <geometry>
+	  <cylinder length="0.1" radius="0.005"/>
+      </geometry>
+      <origin rpy="0 1.57075 0" xyz="-0.05 0 0"/>
+      <material name="whiteish">
+	  <color rgba="1.0 1.0 1.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+	<cylinder length="0.1" radius="0.005"/>
+      </geometry>
+      <origin rpy="0 1.57075 0" xyz="-0.05 0 0"/>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0"/>
+      <mass value="0.1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+  <joint name="rod_to_handle" type="continuous">
+    <parent link="rod"/>
+    <child link="handle"/>
+    <axis xyz="1 0 0"/>
+    <origin xyz="0 0 0"/>
+  </joint>
+
+  <link name="handle">
+    <visual>
+      <geometry>
+	  <mesh filename="driving-wheel-dae/logitech_driving_force_pro_wheel_smallbigger_wpi.dae" scale="1 1 1"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="driving-wheel-dae//logitech_driving_force_pro_wheel_smallbigger_wpi.dae" scale="1 1 1"/>
+      </geometry>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </collision>
+    <inertial>
+      <origin xyz="0 0 0" />
+      <mass value="0.1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+  </link>
+
+</robot>
