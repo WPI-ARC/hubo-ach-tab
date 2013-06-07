@@ -257,9 +257,22 @@ namespace HACHT {
         // Update robot's pose
         //hubo->setConfig( actuatedDofs, mTrajs[0].positions[0] );
 
+        // Set Hubo in configuration
+        Eigen::VectorXd q = Eigen::VectorXd::Zero( hubo->getNumDofs() );
+        q[21-6] = -0.95;
+        q[22-6] = -0.95;
+        //q[54-6] = 1;
+        //q[49-6] = 1;
+        hubo->setConfig( actuatedDofs, q );
+
         // Create controller
         contr = new HuboManipController( hubo, actuatedDofs, kP, kD, ankleDofs, anklePGains, ankleDGains );
-        contr->ref_pos = Eigen::VectorXd::Zero(hubo->getNumDofs());
+
+        q = Eigen::VectorXd::Zero( hubo->getNumDofs() );
+        q[21] = -0.95;
+        q[22] = -0.95;
+        contr->ref_pos = q;        
+        //contr->ref_pos = Eigen::VectorXd::Zero(hubo->getNumDofs());
 
         // initialize controller
 //        Eigen::VectorXd controller_mask = Eigen::VectorXd::Ones(hubo->getNumDofs());
