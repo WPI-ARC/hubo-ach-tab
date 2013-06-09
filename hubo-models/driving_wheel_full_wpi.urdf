@@ -40,13 +40,13 @@
   <link name="handle">
     <visual>
       <geometry>
-	  <mesh filename="driving-wheel-dae/logitech_driving_force_pro_wheel_smallbigger_wpi.dae" scale="1 1 1"/>
+	  <mesh filename="driving-wheel-dae/logitech_driving_force_pro_wheel_smallbigger5_wpi.dae" scale="1 1 1"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="driving-wheel-dae//logitech_driving_force_pro_wheel_smallbigger_wpi.dae" scale="1 1 1"/>
+        <mesh filename="driving-wheel-dae//logitech_driving_force_pro_wheel_smallbigger5_wpi.dae" scale="1 1 1"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </collision>

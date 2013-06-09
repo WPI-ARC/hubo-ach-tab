@@ -2,6 +2,12 @@ cmake_minimum_required (VERSION 2.6)
 project (HuboAchTab)
 
 ###############
+# ROS environment
+include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+#set(ROS_BUILD_TYPE Coverage)
+rosbuild_init()
+
+###############
 # Build configuration
 
 set(CMAKE_INSTALL_PREFIX /usr )
@@ -14,8 +20,10 @@ set(PKG_DESC "HACHT is a DART/GRIP application which emulates the HUBO robot usi
 set(HACHT_VERSION "${HACHT_MAJOR_VERSION}.${HACHT_MINOR_VERSION}.${HACHT_PATCH_VERSION}")
 set(PKG_EXTERNAL_DEPS "hubo-ach, hubo-ach-dev, ach, grip, dart, flann, ccd, fcl")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -O3 -std=c++0x")
-set(CMAKE_CXX_FLAGS_PROFILE "-pg" CACHE STRING "Profiling flags")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -g")
+#SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2 -O3 -std=c++0x")
+#set(CMAKE_CXX_FLAGS_PROFILE "-pg" CACHE STRING "Profiling flags")
+set(CMAKE_CXX_FLAGS_PROFILE "-g")
 
 ###############
 # libraries and headers
@@ -33,7 +41,7 @@ find_package(DART REQUIRED CONFIG)
 find_package(GRIP REQUIRED)
 
 # ach, hubo-ach
-set(ACH_LIBRARIES "/usr/lib/libach.so")
+set(ACH_LIBRARIES "/usr/local/lib/libach.so")
 set(HUBO_LIBRARIES "/usr/lib/libhuboparams.so")
 
 ###############
@@ -49,7 +57,8 @@ include_directories(${GRIP_INCLUDEDIR})
 include_directories(${WXWIDGETS_SHARED_INCLUDE_DIRS})
 link_directories(${CMAKE_SOURCE_DIR}/lib ${DART_LIBRARY_DIRS} ${GRIP_LIBRARY_DIRS} ${WXWIDGETS_SHARED_LIBRARY_DIRS})
 
-add_executable (HuboAchTab ${srcs} ${hdrs})
+
+rosbuild_add_executable (HuboAchTab ${srcs} ${hdrs})
 
 target_link_libraries (HuboAchTab ${GRIP_LIBRARIES} ${DART_LIBRARIES} ${DARTExt_LIBRARIES} ${wxWidgets_LIBRARIES} ${Boost_LIBRARIES} ${HUBO_LIBRARIES} ${ACH_LIBRARIES})
 

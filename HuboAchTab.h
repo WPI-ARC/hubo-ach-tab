@@ -58,6 +58,9 @@
 #include <dynamics/ContactDynamics.h>
 #include <collision/CollisionDetector.h>
 
+#include <ros/ros.h>
+#include <std_msgs/Bool.h>
+
 // HUBO headers
 extern "C" {
 #include <hubo.h>
@@ -130,6 +133,12 @@ namespace HACHT {
         bool InitAch();
         void ReadRefs();
         void WriteState();
+        void closeHands();
+
+        ros::NodeHandle* node_;
+        ros::Subscriber hands_sub;
+        bool m_close_hands;
+        void handsCB( const std_msgs::Bool& message );
 
         int FindNamedDof(std::string name);
         dynamics::BodyNodeDynamics* FindNamedNode(std::string name);

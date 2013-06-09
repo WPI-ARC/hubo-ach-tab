@@ -45,6 +45,14 @@
  */
 
 #include "HuboAchTab.h"
+
+void HACHT::HuboAchTab::handsCB( const std_msgs::Bool& message )
+{
+    std::cout << "MESSAGE ACH" << std::endl;
+    m_close_hands = message.data;
+    exit(1);
+}
+
 #include "HuboController.h"
 #include "HuboManipController.h"
 
@@ -62,7 +70,8 @@
 #include <GUI/GRIPSlider.h>
 #include <GUI/GRIPFrame.h>
 #include <kinematics/Dof.h>
-using namespace std;
+
+//using namespace std;
 
 namespace HACHT {
     //###########################################################
@@ -94,6 +103,8 @@ namespace HACHT {
     : GRIPTab(parent, id, pos, size, style) {
         memset( &H_param, 0, sizeof(H_param));
         memset( &H_param, 0, sizeof(H_state));
+
+        m_close_hands = false;
     }
     
     //###########################################################
@@ -120,6 +131,16 @@ namespace HACHT {
                 std::cout << "Failed to load installed world. Please load a world with a hubo in it." << std::endl;
             }
         }
+
+        int argc=0; 
+        char** argv;
+        std::cout << "Starting node..." << std::endl;
+        ros::init(argc, argv, "", ros::init_options::NoSigintHandler);
+        ROS_INFO("Attempting to start the node ...");
+        node_ = new ros::NodeHandle("hubo_ach_tab");
+        std::string sub_path = "/hand_command";
+        hands_sub = node_->subscribe( sub_path, 1, &HuboAchTab::handsCB, this );
+        ROS_INFO("Loaded trajectory interface to hubo-motion-rt");
     }
     
     // tree view selection changed
@@ -307,6 +328,25 @@ namespace HACHT {
         return true;
     }
 
+    // Close hands
+    void HuboAchTab::closeHands()
+    {
+        // THESE ARE DART INDICES
+        double angle = -1.3;
+
+        contr->ref_pos( 33-6 ) = angle;
+        contr->ref_pos( 34-6 ) = angle;
+        contr->ref_pos( 35-6 ) = angle;
+        contr->ref_pos( 36-6 ) = angle;
+        contr->ref_pos( 37-6 ) = angle;
+
+        contr->ref_pos( 38-6 ) = angle;
+        contr->ref_pos( 39-6 ) = angle;
+        contr->ref_pos( 40-6 ) = angle;
+        contr->ref_pos( 41-6 ) = angle;
+        contr->ref_pos( 42-6 ) = angle;
+    }
+
     // read new refs out of ach channels
     void HuboAchTab::ReadRefs() {
         // define variables
@@ -327,7 +367,11 @@ namespace HACHT {
                     contr->ref_pos[i_vir] = H_ref.ref[i];
                 }
             }
-            cout << "contr->ref_pos : " << endl << contr->ref_pos.transpose() << endl;
+            if( m_close_hands )
+            {
+                closeHands();
+            }
+            //cout << "contr->ref_pos : " << endl << contr->ref_pos.transpose() << endl;
             break;
         case ACH_STALE_FRAMES:
             cout << "Get reference (empty channel) in read ref !!!" << endl; 

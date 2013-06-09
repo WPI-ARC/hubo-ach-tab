@@ -1,0 +1,16 @@
+<package>
+  <description brief="hubo_ach_tab">
+
+     Hubo ach tab for simulating hubo
+
+  </description>
+  <author>Jim Mainprice</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+
+</package>
+
+
