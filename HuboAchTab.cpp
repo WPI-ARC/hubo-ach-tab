@@ -50,7 +50,7 @@ void HACHT::HuboAchTab::handsCB( const std_msgs::Bool& message )
 {
     std::cout << "MESSAGE ACH" << std::endl;
     m_close_hands = message.data;
-    exit(1);
+    ROS_INFO("Received a hand control message: %d", m_close_hands);
 }
 
 #include "HuboController.h"
@@ -105,6 +105,16 @@ namespace HACHT {
         memset( &H_param, 0, sizeof(H_state));
 
         m_close_hands = false;
+
+        int argc=0; 
+        char** argv;
+        std::cout << "Starting node..." << std::endl;
+        ros::init(argc, argv, "hand_interface", ros::init_options::NoSigintHandler);
+        ROS_INFO("Attempting to start the node ...");
+        node_ = new ros::NodeHandle("hubo_ach_tab");
+        std::string sub_path = "/hand_command";
+        hands_sub = node_->subscribe( sub_path, 1, &HuboAchTab::handsCB, this );
+        ROS_INFO("Loaded hand interface to hubo");
     }
     
     //###########################################################
@@ -125,22 +135,13 @@ namespace HACHT {
         {
             loaded = true;
             std::cout << "trying to load installed world from /usr/share/hubo-ach-tab" << std::endl;
-            frame->DoLoad("/home/jmainpri/workspace/dart-simulation/hubo-ach-tab/hubo-models/huboplus-and-wheel-world.urdf", false);
+            //std::string home = get("HOME");
+            frame->DoLoad("/home/air-admin/workspace/dartsim/hubo-ach-tab/hubo-models/huboplus-and-wheel-world.urdf", false);
             //frame->DoLoad("/home/jmainpri/workspace/dart-simulation/hubo-ach-tab/hubo-models/huboplus-empty-world.urdf", false);
             if (mWorld == NULL) {
                 std::cout << "Failed to load installed world. Please load a world with a hubo in it." << std::endl;
             }
         }
-
-        int argc=0; 
-        char** argv;
-        std::cout << "Starting node..." << std::endl;
-        ros::init(argc, argv, "", ros::init_options::NoSigintHandler);
-        ROS_INFO("Attempting to start the node ...");
-        node_ = new ros::NodeHandle("hubo_ach_tab");
-        std::string sub_path = "/hand_command";
-        hands_sub = node_->subscribe( sub_path, 1, &HuboAchTab::handsCB, this );
-        ROS_INFO("Loaded trajectory interface to hubo-motion-rt");
     }
     
     // tree view selection changed
@@ -197,6 +198,7 @@ namespace HACHT {
         hubo->setInternalForces(contr->getTorques(hubo->getPose(),
                                                   hubo->getPoseVelocity(),
                                                   mWorld->getTime()));
+        ros::spinOnce();
     }
 
     // After simulation timestep
@@ -328,23 +330,31 @@ namespace HACHT {
         return true;
     }
 
-    // Close hands
-    void HuboAchTab::closeHands()
+    void HuboAchTab::setFingersAngle(double angle)
     {
         // THESE ARE DART INDICES
-        double angle = -1.3;
 
-        contr->ref_pos( 33-6 ) = angle;
-        contr->ref_pos( 34-6 ) = angle;
-        contr->ref_pos( 35-6 ) = angle;
-        contr->ref_pos( 36-6 ) = angle;
-        contr->ref_pos( 37-6 ) = angle;
+        contr->ref_pos( 33 ) = angle;
+        contr->ref_pos( 34 ) = angle;
+        contr->ref_pos( 35 ) = angle;
+        contr->ref_pos( 36 ) = angle;
+        contr->ref_pos( 37 ) = angle;
 
-        contr->ref_pos( 38-6 ) = angle;
-        contr->ref_pos( 39-6 ) = angle;
-        contr->ref_pos( 40-6 ) = angle;
-        contr->ref_pos( 41-6 ) = angle;
-        contr->ref_pos( 42-6 ) = angle;
+        contr->ref_pos( 38 ) = angle;
+        contr->ref_pos( 39 ) = angle;
+        contr->ref_pos( 40 ) = angle;
+        contr->ref_pos( 41 ) = angle;
+        contr->ref_pos( 42 ) = angle;
+    }     
+
+    void HuboAchTab::closeHands()
+    {
+        setFingersAngle( -1.3 );
+    }
+
+    void HuboAchTab::openHands()
+    {
+        setFingersAngle( 0.0 );
     }
 
     // read new refs out of ach channels
@@ -352,6 +362,16 @@ namespace HACHT {
         // define variables
         hubo_ref_t H_ref;
         memset(&H_ref, 0, sizeof(H_ref));
+
+        if( m_close_hands )
+        {
+            ROS_INFO("Attempting to close the hands");
+            closeHands();
+        }
+        else
+        {
+            openHands();
+        }
 
         // get data from channel
         ach_status_t r;
@@ -366,10 +386,6 @@ namespace HACHT {
                 if (i_vir != -1) {
                     contr->ref_pos[i_vir] = H_ref.ref[i];
                 }
-            }
-            if( m_close_hands )
-            {
-                closeHands();
             }
             //cout << "contr->ref_pos : " << endl << contr->ref_pos.transpose() << endl;
             break;

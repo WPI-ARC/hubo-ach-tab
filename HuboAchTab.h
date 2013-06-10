@@ -133,7 +133,9 @@ namespace HACHT {
         bool InitAch();
         void ReadRefs();
         void WriteState();
+        void setFingersAngle(double angle);
         void closeHands();
+        void openHands();
 
         ros::NodeHandle* node_;
         ros::Subscriber hands_sub;
