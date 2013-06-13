@@ -136,7 +136,8 @@ namespace HACHT {
             loaded = true;
             std::cout << "trying to load installed world from /usr/share/hubo-ach-tab" << std::endl;
             //std::string home = get("HOME");
-            frame->DoLoad("/home/air-admin/workspace/dartsim/hubo-ach-tab/hubo-models/huboplus-and-wheel-world.urdf", false);
+            //frame->DoLoad("/home/air-admin/workspace/dartsim/hubo-ach-tab/hubo-models/huboplus-and-wheel-world.urdf", false);
+            frame->DoLoad("/home/jmainpri/workspace/dart-simulation/hubo-ach-tab/hubo-models/huboplus-and-wheel-world.urdf", false);
             //frame->DoLoad("/home/jmainpri/workspace/dart-simulation/hubo-ach-tab/hubo-models/huboplus-empty-world.urdf", false);
             if (mWorld == NULL) {
                 std::cout << "Failed to load installed world. Please load a world with a hubo in it." << std::endl;
@@ -154,8 +155,12 @@ namespace HACHT {
         std::vector<std::string> hubonames = {"huboplus", "GolemHubo"};
         for(auto it = hubonames.begin(); it != hubonames.end(); it++) {
             for(int i = 0; i < mWorld->getNumSkeletons(); i++)
+            {
                 if (mWorld->getSkeleton(i)->getName().compare(*it) == 0)
                     hubo = mWorld->getSkeleton(i);
+                if (mWorld->getSkeleton(i)->getName()== "wheel")
+                    wheel = mWorld->getSkeleton(i);
+            }
         }
         if (hubo == NULL) {
             std::cout << "Could not find hubo!" << std::endl;
@@ -198,6 +203,19 @@ namespace HACHT {
         hubo->setInternalForces(contr->getTorques(hubo->getPose(),
                                                   hubo->getPoseVelocity(),
                                                   mWorld->getTime()));
+
+        double KD = -30;
+        double torque = KD * wheel->getPoseVelocity()[0];
+        double max_torque = 100;
+
+        if( torque > max_torque )
+            torque = max_torque;
+        if( torque < -max_torque )
+            torque = -max_torque;
+
+        Eigen::VectorXd f(1); f[0] = torque;
+        wheel->setInternalForces(f);
+
         ros::spinOnce();
     }
 
@@ -349,7 +367,7 @@ namespace HACHT {
 
     void HuboAchTab::closeHands()
     {
-        setFingersAngle( -1.3 );
+        setFingersAngle( -1.7 );
     }
 
     void HuboAchTab::openHands()
@@ -386,7 +404,11 @@ namespace HACHT {
                 if (i_vir != -1) {
                     contr->ref_pos[i_vir] = H_ref.ref[i];
                 }
+                else{
+                    ROS_INFO("joint id is not controlled: %d",i);
+                }  
             }
+ 
             //cout << "contr->ref_pos : " << endl << contr->ref_pos.transpose() << endl;
             break;
         case ACH_STALE_FRAMES:
@@ -412,6 +434,10 @@ namespace HACHT {
                 H_state.joint[i_phys].vel = hubo->getPoseVelocity()[i];
                 H_state.joint[i_phys].heat = 0.0;
                 H_state.joint[i_phys].tmp = 0.0;
+                //ROS_INFO("joint id is controlled: %d",i_phys);
+            }
+            else{
+                ROS_INFO("joint id is not controlled: %d",i_phys);
             }
         }
         
